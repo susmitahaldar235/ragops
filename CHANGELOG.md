@@ -1,5 +1,11 @@
 # RAGOps changelog / Lịch sử thay đổi / 変更履歴
 
+## Unreleased
+
+### English
+
+- Added an offline Phoenix recorded-score adapter example that preserves producer-owned score meaning, scale, and direction while enforcing complete case coverage.
+
 ## [1.2.0] - 2026-08-02
 
 ### English
