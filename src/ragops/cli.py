@@ -198,6 +198,10 @@ def build_parser() -> argparse.ArgumentParser:
     governance_audit = governance_commands.add_parser("audit")
     governance_audit.add_argument("--store", required=True)
     governance_audit.add_argument("--artifact-id")
+    serve = commands.add_parser("serve", help="Run the optional local API and workbench")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8000)
+    serve.add_argument("--reload", action="store_true")
     demo_parser = commands.add_parser("demo", help="Generate a credential-free release-gate demo")
     demo_parser.add_argument("--output", default="ragops-demo")
     demo_parser.add_argument(
@@ -646,6 +650,15 @@ def main() -> int:
         except (KeyError, ValueError, OSError, json.JSONDecodeError) as exc:
             raise SystemExit(f"governance error: {exc}") from exc
         print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "serve":
+        if not 1 <= args.port <= 65535:
+            raise SystemExit("serve error: port must be between 1 and 65535")
+        try:
+            import uvicorn
+        except ImportError as exc:
+            raise SystemExit("serve requires the API extra: pip install 'ragops[api]'") from exc
+        uvicorn.run("ragops.api.main:app", host=args.host, port=args.port, reload=args.reload)
         return 0
     if args.command == "demo":
         try:
