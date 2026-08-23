@@ -56,6 +56,7 @@ from ragops.plugins import (
     RetrievalRecallEvaluator,
     SourceFreshnessEvaluator,
 )
+from ragops.policy_v2 import apply_release_policy, load_release_policy_v2
 from ragops.provenance import diagnose_provenance
 from ragops.reporters import (
     comparison_html,
@@ -102,6 +103,13 @@ def build_parser() -> argparse.ArgumentParser:
     evidence_create.add_argument("--metadata-json", default="{}")
     evidence_verify = evidence_commands.add_parser("verify", help="Verify an evidence bundle")
     evidence_verify.add_argument("--bundle", required=True)
+    gate_v2 = commands.add_parser("gate-v2", help="Apply slice-aware release policy v2")
+    gate_v2.add_argument("--scenario", required=True)
+    gate_v2.add_argument("--baseline", required=True)
+    gate_v2.add_argument("--candidate", required=True)
+    gate_v2.add_argument("--policy", required=True)
+    gate_v2.add_argument("--now")
+    gate_v2.add_argument("--output")
     demo_parser = commands.add_parser("demo", help="Generate a credential-free release-gate demo")
     demo_parser.add_argument("--output", default="ragops-demo")
     demo_parser.add_argument(
@@ -374,6 +382,26 @@ def main() -> int:
             raise SystemExit(f"evidence error: {exc}") from exc
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return 0
+    if args.command == "gate-v2":
+        try:
+            scenario = load_scenario(args.scenario)
+            report = apply_release_policy(
+                load_release_policy_v2(args.policy),
+                evaluate(scenario, load_responses(args.baseline)),
+                evaluate(scenario, load_responses(args.candidate)),
+                scenario,
+                now=args.now or datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            )
+        except (ContractError, OSError, ValueError) as exc:
+            raise SystemExit(f"release policy error: {exc}") from exc
+        rendered = json.dumps(report.to_dict(), ensure_ascii=False, indent=2) + "\n"
+        if args.output:
+            output = Path(args.output)
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(rendered, encoding="utf-8")
+        else:
+            print(rendered, end="")
+        return 2 if report.decision == "BLOCK" else 0
     if args.command == "demo":
         try:
             summary = write_demo(args.output, force=args.force, scenario_id=args.scenario)
