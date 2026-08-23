@@ -25,7 +25,7 @@ def test_current_operations_are_linked() -> None:
     for guide in (
         "docs/ARCHITECTURE.md",
         "docs/OPERATIONS.md",
-        "docs/releases/v1.2.0.md",
+        "docs/releases/v2.0.0.md",
     ):
         assert Path(guide).is_file()
         assert guide in readme

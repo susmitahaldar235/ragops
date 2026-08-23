@@ -28,7 +28,7 @@ RAGOps compares recorded candidate behavior with an accepted baseline, applies a
 
 Requirements: Python 3.11+.
 
-Current technical references: [architecture](docs/ARCHITECTURE.md), [contracts](docs/CONTRACTS.md), [governance](docs/governance.md), [operations](docs/OPERATIONS.md), [security](SECURITY.md), and [v1.2.0 release notes](docs/releases/v1.2.0.md).
+Current technical references: [architecture](docs/ARCHITECTURE.md), [contracts](docs/CONTRACTS.md), [governance](docs/governance.md), [operations](docs/OPERATIONS.md), [security](SECURITY.md), and [v2.0.0 release notes](docs/releases/v2.0.0.md).
 
 The repository is also a skills-only plugin for ChatGPT, Codex, Claude Code and Cowork. It does not include a hosted MCP connector. See the [directory submission package](docs/submission/DIRECTORY_SUBMISSION.md), [privacy policy](PRIVACY.md), [terms](TERMS.md), and [support guidance](SUPPORT.md).
 

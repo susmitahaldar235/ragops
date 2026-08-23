@@ -4,7 +4,28 @@
 
 ### English
 
-- Added an offline Phoenix recorded-score adapter example that preserves producer-owned score meaning, scale, and direction while enforcing complete case coverage.
+- No unreleased changes.
+
+## [2.0.0] - 2026-08-23
+
+### English
+
+- Added versioned contract migration, content-addressed evidence bundles, slice/distribution gates, evaluator calibration, trace-graph evaluation, dataset leakage controls, CI renderers, portable vendor adapters, and audited blind review.
+- Packaged the optional FastAPI workbench with CSP-safe DOM rendering and added Python 3.11-3.13 CI.
+- Upgraded the synthetic flagship demo to generate canonical JSON, Markdown, HTML, JUnit, SARIF, GitHub Summary, and verified evidence for executive, engineer, and auditor profiles.
+- Added a deterministic ChatGPT skills-only plugin bundle and v2 release evidence.
+
+### Tiếng Việt
+
+- Bổ sung contract có version, evidence bundle content-addressed, slice/distribution gate, calibration, trace graph, chống dataset leakage, CI renderer, vendor adapter và blind review có audit.
+- Đóng gói FastAPI workbench tùy chọn với CSP/DOM an toàn và CI Python 3.11-3.13.
+- Nâng demo synthetic để xuất cùng một quyết định qua JSON, Markdown, HTML, JUnit, SARIF, GitHub Summary và evidence đã xác minh.
+
+### 日本語
+
+- versioned contract、content-addressed evidence、slice/distribution gate、calibration、trace graph、dataset leakage check、CI renderer、vendor adapter、blind review audit を追加しました。
+- CSP-safe な任意 FastAPI workbench と Python 3.11-3.13 CI を同梱しました。
+- synthetic flagship demo は同一判定を JSON、Markdown、HTML、JUnit、SARIF、GitHub Summary、検証済み evidence に出力します。
 
 ## [1.2.0] - 2026-08-02
 
@@ -46,5 +67,6 @@
 - リポジトリ所有の GitHub Actions をすべて削除し、リリースゲートはローカル CLI と API で引き続き利用できます。
 - 公開タグとパッケージ版を `v1.0.0` に統一しました。
 
+[2.0.0]: https://github.com/thangldw/ragops/releases/tag/v2.0.0
 [1.2.0]: https://github.com/thangldw/ragops/releases/tag/v1.2.0
 [1.0.0]: https://github.com/thangldw/ragops/releases/tag/v1.0.0

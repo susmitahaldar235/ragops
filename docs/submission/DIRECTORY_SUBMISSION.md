@@ -1,10 +1,12 @@
 # RAGOps directory submission
 
-Prepared: 2026-08-02
+Prepared: 2026-08-23
 
 Published on the OpenAI Plugin Directory: https://chatgpt.com/plugins/plugins_6a6ed9e25c60819194c48f4233ae507e
 
-Published on PyPI: https://pypi.org/project/ragops/1.2.0/
+PyPI release target: https://pypi.org/project/ragops/2.0.0/
+
+Submission artifact: `dist/ragops-chatgpt-plugin-2.0.0.zip`
 
 ## Submission choice
 
@@ -17,7 +19,7 @@ Published on PyPI: https://pypi.org/project/ragops/1.2.0/
 - Name: RAGOps
 - Category: Developer Tools / Productivity
 - Short description: Gate RAG and agent releases with evidence.
-- Long description: RAGOps compares recorded candidate behavior with an accepted baseline, applies versioned evaluation and regression policies, and returns explainable PASS, WARN, or BLOCK evidence. Use it to inspect benchmark coverage, catch citation or retrieval regressions, and create review-ready release reports without requiring an AI provider.
+- Long description: RAGOps compares recorded candidate behavior with an accepted baseline, applies versioned policy, localizes regressions by case and policy path, and returns verifiable PASS, WARN, or BLOCK evidence. Use it to catch citation, groundedness, retrieval, trajectory, or evaluator regressions without requiring an AI provider.
 - Developer: DUC THANG LUU
 - Website: https://github.com/thangldw/ragops
 - Support: https://github.com/thangldw/ragops/blob/main/SUPPORT.md
@@ -59,14 +61,15 @@ Published on PyPI: https://pypi.org/project/ragops/1.2.0/
 
 No account or credential is required. Use Python 3.11+ and run the bundled wrapper at `skills/evaluate-ai-release/scripts/run_ragops.py`. The OpenAI ZIP stores review fixtures under `skills/evaluate-ai-release/references/fixtures/japanese_troubleshooting`; the GitHub plugin uses the canonical copies under `scenarios/japanese_troubleshooting`. A gate block may return exit code 2; this is an expected evaluated outcome.
 
-## Initial release notes
+## v2.0 update notes
 
-Initial public plugin submission. RAGOps packages deterministic RAG and AI-agent evaluation workflows, reproducible CLI execution, release-safety guardrails, and review-ready listing metadata. This version does not include a hosted MCP connector or interactive UI.
+RAGOps 2.0 adds content-addressed evidence bundles, slice-aware policy, calibration, trace graphs, dataset leakage checks, CI-native output, portable import profiles, and audited blind review. The plugin remains skills-only and does not include a hosted MCP connector. The optional local API/workbench is distributed through the Python package, not as a remote ChatGPT connector.
 
 ## Final portal checks
 
 - Verify the publisher identity as Thang Luu or the intended business name.
 - Upload the repository/plugin package without `.venv`, caches, generated customer data, or credentials.
+- Verify the plugin ZIP checksum from `dist/SHA256SUMS` and run its vendored wrapper before upload.
 - Confirm all public legal and support links resolve from the default branch.
 - Select only countries where English-language support can be provided.
 - For OpenAI, include five positive and three negative tests exactly as above.

@@ -2,7 +2,7 @@ ragops_release_gate:
   stage: test
   image: python:3.12-slim
   variables:
-    RAGOPS_VERSION: "1.2.0"
+    RAGOPS_VERSION: "2.0.0"
     RAGOPS_SCENARIO: "scenarios/japanese_troubleshooting/benchmark-v0.2.json"
     RAGOPS_BASELINE: "scenarios/japanese_troubleshooting/benchmark-baseline.json"
     RAGOPS_CANDIDATE: "scenarios/japanese_troubleshooting/benchmark-regressed.json"

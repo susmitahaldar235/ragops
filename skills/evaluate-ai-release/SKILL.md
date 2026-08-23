@@ -14,7 +14,7 @@ Use RAGOps as a deterministic evaluator. Treat its result as release evidence, n
 3. Inspect inputs for secrets or personal data before running an evaluation. Keep generated reports private unless the user approves sharing.
 4. Run the narrowest applicable command through `python3 scripts/run_ragops.py ...` from this skill directory.
 5. Interpret exit code `0` as PASS and exit code `2` as an evaluated BLOCK, not an execution failure. Treat other nonzero codes as operational errors.
-6. Report the decision, failed gates, material metric deltas, provenance limitations, and the smallest next action.
+6. Verify generated evidence bundles before using them, then report the decision, failed gates, material metric deltas, provenance limitations, and the smallest next action.
 
 ## Guardrails
 
@@ -23,6 +23,7 @@ Use RAGOps as a deterministic evaluator. Treat its result as release evidence, n
 - Do not run provider-backed evaluation unless the user explicitly supplies and authorizes the provider configuration.
 - Do not publish, merge, tag, or deploy based only on this skill's output.
 - Preserve input artifacts and command parameters in the final evidence so another reviewer can reproduce the result.
+- Distinguish synthetic, production-derived, and live production evidence; never infer adoption from the bundled demo.
 
 ## Output
 

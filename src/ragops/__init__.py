@@ -12,7 +12,7 @@ from ragops.statistical import (
     replay_bundle_from_dict,
 )
 
-__version__ = "1.2.0"
+__version__ = "2.0.0"
 
 __all__ = [
     "compare",

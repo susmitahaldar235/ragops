@@ -53,6 +53,7 @@ jobs:
             --pattern 'ragops-*.whl' \
             --pattern 'ragops-*.tar.gz' \
             --pattern 'ragops-*.cdx.json' \
+            --pattern 'ragops-chatgpt-plugin-*.zip' \
             --pattern 'SHA256SUMS' \
             --dir release-assets
           (cd release-assets && sha256sum --check SHA256SUMS)

@@ -1,7 +1,7 @@
 {
   "name": "ragops",
-  "version": "1.0.0",
-  "description": "Explainable regression tests and release gates for RAG systems and AI agents.",
+  "version": "2.0.0",
+  "description": "Offline, explainable release gates and evidence bundles for RAG systems and AI agents.",
   "author": {
     "name": "Thang Luu",
     "url": "https://github.com/thangldw"
@@ -14,7 +14,7 @@
   "interface": {
     "displayName": "RAGOps",
     "shortDescription": "Gate AI releases with evidence",
-    "longDescription": "Compare candidate AI behavior with an accepted baseline, explain failed gates, and produce reviewable release evidence without requiring a model provider.",
+    "longDescription": "Compare recorded candidate behavior with an accepted baseline, localize regressions by policy and case, and produce verifiable release evidence without requiring a model provider.",
     "developerName": "DUC THANG LUU",
     "category": "Productivity",
     "capabilities": ["Read"],
