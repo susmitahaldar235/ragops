@@ -1,6 +1,6 @@
 {
   "name": "ragops",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Offline, explainable release gates and evidence bundles for RAG systems and AI agents.",
   "author": {
     "name": "Thang Luu",

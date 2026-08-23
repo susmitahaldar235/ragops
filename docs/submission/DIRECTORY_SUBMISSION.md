@@ -4,9 +4,9 @@ Prepared: 2026-08-23
 
 Published on the OpenAI Plugin Directory: https://chatgpt.com/plugins/plugins_6a6ed9e25c60819194c48f4233ae507e
 
-PyPI release target: https://pypi.org/project/ragops/2.0.0/
+PyPI release target: https://pypi.org/project/ragops/2.0.1/
 
-Submission artifact: `dist/ragops-chatgpt-plugin-2.0.0.zip`
+Submission artifact: `dist/ragops-chatgpt-plugin-2.0.1.zip`
 
 ## Submission choice
 

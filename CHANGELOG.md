@@ -6,6 +6,23 @@
 
 - No unreleased changes.
 
+## [2.0.1] - 2026-08-23
+
+### English
+
+- Republished the unchanged RAGOps 2.0 feature set under a new patch version because PyPI permanently reserves filenames from deleted releases.
+- Corrected the Trusted Publishing action reference so GitHub Actions uses the published v1.14.2 container with Core Metadata 2.5 support.
+
+### Tiếng Việt
+
+- Phát hành lại toàn bộ tính năng RAGOps 2.0 dưới patch version mới vì PyPI khóa vĩnh viễn filename của release đã bị xóa.
+- Sửa tham chiếu Trusted Publishing để GitHub Actions dùng container v1.14.2 đã phát hành và hỗ trợ Core Metadata 2.5.
+
+### 日本語
+
+- 削除済みリリースのファイル名を PyPI が恒久的に予約するため、RAGOps 2.0 の機能を新しいパッチ版で再公開しました。
+- Trusted Publishing の参照を修正し、Core Metadata 2.5 対応の公開済み v1.14.2 コンテナを使用します。
+
 ## [2.0.0] - 2026-08-23
 
 ### English
@@ -67,6 +84,7 @@
 - リポジトリ所有の GitHub Actions をすべて削除し、リリースゲートはローカル CLI と API で引き続き利用できます。
 - 公開タグとパッケージ版を `v1.0.0` に統一しました。
 
+[2.0.1]: https://github.com/thangldw/ragops/releases/tag/v2.0.1
 [2.0.0]: https://github.com/thangldw/ragops/releases/tag/v2.0.0
 [1.2.0]: https://github.com/thangldw/ragops/releases/tag/v1.2.0
 [1.0.0]: https://github.com/thangldw/ragops/releases/tag/v1.0.0

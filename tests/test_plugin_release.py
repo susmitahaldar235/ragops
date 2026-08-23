@@ -16,15 +16,15 @@ SPEC.loader.exec_module(local_release)
 def test_chatgpt_plugin_bundle_is_deterministic_and_self_contained(tmp_path, monkeypatch):
     monkeypatch.setattr(local_release, "DIST", tmp_path)
 
-    first = local_release.build_plugin_bundle("2.0.0")
+    first = local_release.build_plugin_bundle("2.0.1")
     first_bytes = first.read_bytes()
-    second = local_release.build_plugin_bundle("2.0.0")
+    second = local_release.build_plugin_bundle("2.0.1")
 
     assert second.read_bytes() == first_bytes
     with zipfile.ZipFile(first) as archive:
         names = archive.namelist()
         manifest = json.loads(archive.read(".codex-plugin/plugin.json"))
-    assert manifest["version"] == "2.0.0"
+    assert manifest["version"] == "2.0.1"
     assert "skills/evaluate-ai-release/SKILL.md" in names
     assert "skills/evaluate-ai-release/scripts/run_ragops.py" in names
     assert "skills/evaluate-ai-release/scripts/vendor/ragops/cli.py" in names
@@ -35,7 +35,7 @@ def test_chatgpt_plugin_bundle_is_deterministic_and_self_contained(tmp_path, mon
 
 def test_extracted_chatgpt_bundle_runs_without_install(tmp_path, monkeypatch):
     monkeypatch.setattr(local_release, "DIST", tmp_path)
-    bundle = local_release.build_plugin_bundle("2.0.0")
+    bundle = local_release.build_plugin_bundle("2.0.1")
     extracted = tmp_path / "plugin"
     with zipfile.ZipFile(bundle) as archive:
         archive.extractall(extracted)
@@ -49,4 +49,4 @@ def test_extracted_chatgpt_bundle_runs_without_install(tmp_path, monkeypatch):
         text=True,
     )
 
-    assert result.stdout.strip() == "ragops 2.0.0"
+    assert result.stdout.strip() == "ragops 2.0.1"
