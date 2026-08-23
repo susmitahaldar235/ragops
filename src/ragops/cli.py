@@ -25,6 +25,7 @@ from ragops.baseline import (
     write_baseline_manifest,
 )
 from ragops.benchmarks import scenario_summary
+from ragops.calibration import calibrate_evaluator, load_calibration_set
 from ragops.config import (
     load_evaluation_policy,
     load_evaluator_drift_policy,
@@ -110,6 +111,9 @@ def build_parser() -> argparse.ArgumentParser:
     gate_v2.add_argument("--policy", required=True)
     gate_v2.add_argument("--now")
     gate_v2.add_argument("--output")
+    calibrate = commands.add_parser("calibrate", help="Calibrate an evaluator against human labels")
+    calibrate.add_argument("--input", required=True)
+    calibrate.add_argument("--output")
     demo_parser = commands.add_parser("demo", help="Generate a credential-free release-gate demo")
     demo_parser.add_argument("--output", default="ragops-demo")
     demo_parser.add_argument(
@@ -402,6 +406,23 @@ def main() -> int:
         else:
             print(rendered, end="")
         return 2 if report.decision == "BLOCK" else 0
+    if args.command == "calibrate":
+        try:
+            calibration_set = load_calibration_set(args.input)
+            report = calibrate_evaluator(
+                calibration_set.evaluator,
+                calibration_set.records,
+                calibration_set.policy,
+            )
+        except (ContractError, OSError, ValueError) as exc:
+            raise SystemExit(f"calibration error: {exc}") from exc
+        rendered = json.dumps(report.to_dict(), ensure_ascii=False, indent=2) + "\n"
+        if args.output:
+            output = Path(args.output)
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(rendered, encoding="utf-8")
+        print(rendered, end="")
+        return 0 if report.decision == "PASS" else 2
     if args.command == "demo":
         try:
             summary = write_demo(args.output, force=args.force, scenario_id=args.scenario)
