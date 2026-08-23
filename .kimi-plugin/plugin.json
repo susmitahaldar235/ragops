@@ -1,6 +1,6 @@
 {
   "name": "ragops",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Explainable regression tests and release gates for RAG systems and AI agents.",
   "author": {
     "name": "Thang Luu",
