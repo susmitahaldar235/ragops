@@ -10,6 +10,7 @@ from ragops.adapters.external_metrics import (
     load_external_metric_evaluator,
     validate_external_metric_pair,
 )
+from ragops.adapters.otel_genai import otel_spans_to_trace_graph
 from ragops.adapters.repeated_runs import (
     CommandMetricAdapter,
     collect_repeated_runs,
@@ -70,6 +71,7 @@ from ragops.reporters import (
 from ragops.sequential import compare_replay_bundles_sequentially
 from ragops.statistical import compare_replay_bundles, load_replay_bundle
 from ragops.store import ExperimentStore
+from ragops.trace_graph import evaluate_trace_graph, load_trace_expectation, load_trace_graph
 from ragops.traces import load_trace_jsonl
 
 
@@ -114,6 +116,15 @@ def build_parser() -> argparse.ArgumentParser:
     calibrate = commands.add_parser("calibrate", help="Calibrate an evaluator against human labels")
     calibrate.add_argument("--input", required=True)
     calibrate.add_argument("--output")
+    trace_parser = commands.add_parser("trace", help="Convert and evaluate agent trace graphs")
+    trace_commands = trace_parser.add_subparsers(dest="trace_command", required=True)
+    trace_evaluate = trace_commands.add_parser("evaluate", help="Evaluate a trace graph")
+    trace_evaluate.add_argument("--trace", required=True)
+    trace_evaluate.add_argument("--expectation", required=True)
+    trace_evaluate.add_argument("--output")
+    trace_convert = trace_commands.add_parser("convert-otel", help="Convert OpenTelemetry JSON")
+    trace_convert.add_argument("--input", required=True)
+    trace_convert.add_argument("--output", required=True)
     demo_parser = commands.add_parser("demo", help="Generate a credential-free release-gate demo")
     demo_parser.add_argument("--output", default="ragops-demo")
     demo_parser.add_argument(
@@ -423,6 +434,34 @@ def main() -> int:
             output.write_text(rendered, encoding="utf-8")
         print(rendered, end="")
         return 0 if report.decision == "PASS" else 2
+    if args.command == "trace":
+        try:
+            if args.trace_command == "convert-otel":
+                raw_spans = json.loads(Path(args.input).read_text(encoding="utf-8"))
+                graph = otel_spans_to_trace_graph(raw_spans)
+                output = Path(args.output)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(
+                    json.dumps(graph.to_dict(), ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                payload = {"converted": True, "trace_id": graph.trace_id, "output": str(output)}
+                exit_code = 0
+            else:
+                report = evaluate_trace_graph(
+                    load_trace_graph(args.trace), load_trace_expectation(args.expectation)
+                )
+                payload = report.to_dict()
+                rendered = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+                if args.output:
+                    output = Path(args.output)
+                    output.parent.mkdir(parents=True, exist_ok=True)
+                    output.write_text(rendered, encoding="utf-8")
+                exit_code = 0 if report.decision == "PASS" else 2
+        except (ContractError, OSError, json.JSONDecodeError, ValueError) as exc:
+            raise SystemExit(f"trace error: {exc}") from exc
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return exit_code
     if args.command == "demo":
         try:
             summary = write_demo(args.output, force=args.force, scenario_id=args.scenario)
