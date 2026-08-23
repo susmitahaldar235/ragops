@@ -24,6 +24,12 @@ ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
 
 
+def environment_tool(name: str) -> str:
+    suffix = ".exe" if os.name == "nt" else ""
+    candidate = Path(sys.executable).parent / f"{name}{suffix}"
+    return str(candidate) if candidate.is_file() else name
+
+
 def run(
     *args: str,
     env: dict[str, str] | None = None,
@@ -158,14 +164,16 @@ def build_plugin_bundle(expected_version: str) -> Path:
 
 def verify(tag: str) -> None:
     assert_tag(tag)
-    run("ruff", "check", ".")
+    run(environment_tool("ruff"), "check", ".")
     env = os.environ.copy()
     env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
     run(sys.executable, "-m", "pytest", "-q", env=env)
-    run("ragops", "evaluate", "--scenario", "scenarios/japanese_troubleshooting/scenario.json",
-        "--responses", "scenarios/japanese_troubleshooting/sample_responses.json")
+    run(sys.executable, "-m", "ragops.cli", "evaluate", "--scenario",
+        "scenarios/japanese_troubleshooting/scenario.json", "--responses",
+        "scenarios/japanese_troubleshooting/sample_responses.json")
     blocked = subprocess.run(
-        ["ragops", "compare", "--scenario", "scenarios/japanese_troubleshooting/benchmark-v0.2.json",
+        [sys.executable, "-m", "ragops.cli", "compare", "--scenario",
+         "scenarios/japanese_troubleshooting/benchmark-v0.2.json",
          "--baseline", "scenarios/japanese_troubleshooting/benchmark-baseline.json", "--candidate",
          "scenarios/japanese_troubleshooting/benchmark-regressed.json"], cwd=ROOT
     )
@@ -178,8 +186,9 @@ def verify(tag: str) -> None:
     verify_clean_install(wheel, version())
     plugin = build_plugin_bundle(version())
     sbom = DIST / f"ragops-{version()}.cdx.json"
-    if shutil.which("cyclonedx-py"):
-        run("cyclonedx-py", "environment", sys.executable, "--output-reproducible",
+    cyclonedx = environment_tool("cyclonedx-py")
+    if Path(cyclonedx).is_file() or shutil.which(cyclonedx):
+        run(cyclonedx, "environment", sys.executable, "--output-reproducible",
             "--output-file", str(sbom))
     else:
         raise SystemExit("cyclonedx-py is required: python -m pip install cyclonedx-bom==7.3.0")

@@ -53,3 +53,15 @@ def test_pypi_requires_explicit_token(monkeypatch) -> None:
         assert "PYPI_API_TOKEN" in str(error)
     else:
         raise AssertionError("publish must fail closed without a token")
+
+
+def test_environment_tool_prefers_active_python_scripts_directory(tmp_path, monkeypatch) -> None:
+    scripts = tmp_path / "bin"
+    scripts.mkdir()
+    python = scripts / "python"
+    python.touch()
+    ruff = scripts / "ruff"
+    ruff.touch()
+    monkeypatch.setattr(local_release.sys, "executable", str(python))
+
+    assert local_release.environment_tool("ruff") == str(ruff)
