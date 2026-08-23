@@ -40,6 +40,9 @@ ragops = "ragops.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/ragops"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"schemas" = "ragops/schemas"
+
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]
 testpaths = ["tests"]

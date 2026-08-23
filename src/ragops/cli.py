@@ -31,6 +31,7 @@ from ragops.config import (
     load_sequential_policy,
     load_statistical_policy,
 )
+from ragops.contracts import diff_contract, migrate_contract, validate_contract
 from ragops.control_plane import ControlPlane
 from ragops.demo import DEFAULT_DEMO_SCENARIO, DEMO_BUNDLES, write_demo
 from ragops.drift import detect_evaluator_drift
@@ -72,6 +73,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="ragops")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     commands = parser.add_subparsers(dest="command", required=True)
+    contract_parser = commands.add_parser("contract", help="Validate and migrate contracts")
+    contract_commands = contract_parser.add_subparsers(dest="contract_command", required=True)
+    contract_validate = contract_commands.add_parser("validate", help="Validate a JSON contract")
+    contract_validate.add_argument("--kind", choices=("auto", "scenario", "trace"), default="auto")
+    contract_validate.add_argument("--input", required=True)
+    contract_diff = contract_commands.add_parser("diff", help="Compare contract versions")
+    contract_diff.add_argument("--kind", choices=("scenario", "trace"), required=True)
+    contract_diff.add_argument("--from", dest="from_version", required=True)
+    contract_diff.add_argument("--to", dest="to_version", required=True)
+    contract_migrate = contract_commands.add_parser("migrate", help="Migrate a JSON contract")
+    contract_migrate.add_argument("--kind", choices=("scenario", "trace"), required=True)
+    contract_migrate.add_argument("--from", dest="from_version", required=True)
+    contract_migrate.add_argument("--to", dest="to_version", required=True)
+    contract_migrate.add_argument("--input", required=True)
+    contract_migrate.add_argument("--output", required=True)
+    contract_migrate.add_argument("--question", default="")
     demo_parser = commands.add_parser("demo", help="Generate a credential-free release-gate demo")
     demo_parser.add_argument("--output", default="ragops-demo")
     demo_parser.add_argument(
@@ -280,6 +297,41 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
+    if args.command == "contract":
+        try:
+            if args.contract_command == "diff":
+                payload = diff_contract(args.kind, args.from_version, args.to_version).to_dict()
+            else:
+                source = Path(args.input)
+                data = json.loads(source.read_text(encoding="utf-8"))
+                if args.contract_command == "validate":
+                    payload = validate_contract(data, args.kind).to_dict()
+                else:
+                    output = Path(args.output)
+                    if source.resolve() == output.resolve():
+                        raise SystemExit("contract input and output must differ")
+                    migrated = migrate_contract(
+                        data,
+                        args.kind,
+                        args.from_version,
+                        args.to_version,
+                        question=args.question,
+                    )
+                    output.parent.mkdir(parents=True, exist_ok=True)
+                    output.write_text(
+                        json.dumps(migrated, ensure_ascii=False, indent=2) + "\n",
+                        encoding="utf-8",
+                    )
+                    payload = {
+                        "kind": args.kind,
+                        "from_version": args.from_version,
+                        "to_version": args.to_version,
+                        "output": str(output),
+                    }
+        except (ContractError, OSError, json.JSONDecodeError) as exc:
+            raise SystemExit(f"contract error: {exc}") from exc
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return 0
     if args.command == "demo":
         try:
             summary = write_demo(args.output, force=args.force, scenario_id=args.scenario)
