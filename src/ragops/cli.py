@@ -36,6 +36,13 @@ from ragops.config import (
 )
 from ragops.contracts import diff_contract, migrate_contract, validate_contract
 from ragops.control_plane import ControlPlane
+from ragops.datasets import (
+    create_dataset_manifest,
+    diff_dataset_manifests,
+    load_dataset_manifest,
+    validate_dataset_manifest,
+    write_dataset_manifest,
+)
 from ragops.demo import DEFAULT_DEMO_SCENARIO, DEMO_BUNDLES, write_demo
 from ragops.drift import detect_evaluator_drift
 from ragops.engine import compare, evaluate
@@ -125,6 +132,25 @@ def build_parser() -> argparse.ArgumentParser:
     trace_convert = trace_commands.add_parser("convert-otel", help="Convert OpenTelemetry JSON")
     trace_convert.add_argument("--input", required=True)
     trace_convert.add_argument("--output", required=True)
+    dataset_parser = commands.add_parser("dataset", help="Manage benchmark dataset manifests")
+    dataset_commands = dataset_parser.add_subparsers(dest="dataset_command", required=True)
+    dataset_create = dataset_commands.add_parser("create", help="Create a dataset manifest")
+    dataset_create.add_argument("--scenario", required=True)
+    dataset_create.add_argument("--dataset-id", required=True)
+    dataset_create.add_argument("--version", required=True)
+    dataset_create.add_argument(
+        "--source-classification", choices=("synthetic", "public", "production-derived"), required=True
+    )
+    dataset_create.add_argument("--owner", action="append", required=True)
+    dataset_create.add_argument("--split", action="append", required=True, metavar="NAME=ID,ID")
+    dataset_create.add_argument("--reviewed", action="store_true")
+    dataset_create.add_argument("--output", required=True)
+    dataset_validate = dataset_commands.add_parser("validate", help="Validate a dataset manifest")
+    dataset_validate.add_argument("--manifest", required=True)
+    dataset_validate.add_argument("--minimum-slice", action="append", default=[], metavar="SELECTOR=COUNT")
+    dataset_diff = dataset_commands.add_parser("diff", help="Diff dataset manifests")
+    dataset_diff.add_argument("--before", required=True)
+    dataset_diff.add_argument("--after", required=True)
     demo_parser = commands.add_parser("demo", help="Generate a credential-free release-gate demo")
     demo_parser.add_argument("--output", default="ragops-demo")
     demo_parser.add_argument(
@@ -460,6 +486,53 @@ def main() -> int:
                 exit_code = 0 if report.decision == "PASS" else 2
         except (ContractError, OSError, json.JSONDecodeError, ValueError) as exc:
             raise SystemExit(f"trace error: {exc}") from exc
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return exit_code
+    if args.command == "dataset":
+        try:
+            if args.dataset_command == "create":
+                scenario = load_scenario(args.scenario)
+                splits = _named_csv_values(args.split, "dataset split")
+                cases = tuple(
+                    {
+                        "id": item.id,
+                        "question": item.question,
+                        "evidence": list(item.evidence),
+                        "required_citation_ids": list(item.required_citation_ids),
+                        "category": item.category,
+                        "severity": item.severity,
+                        "language": item.language,
+                        "tags": list(item.tags),
+                        "source": f"scenario:{scenario.id}",
+                        "reviewed": args.reviewed,
+                    }
+                    for item in scenario.cases
+                )
+                manifest = create_dataset_manifest(
+                    args.dataset_id,
+                    args.version,
+                    cases,
+                    splits=splits,
+                    source_classification=args.source_classification,
+                    owners=tuple(args.owner),
+                )
+                write_dataset_manifest(args.output, manifest)
+                payload = manifest.to_dict()
+                exit_code = 0
+            elif args.dataset_command == "validate":
+                minimum_slices = _named_int_values(args.minimum_slice, "dataset minimum slice")
+                manifest = load_dataset_manifest(args.manifest)
+                issues = validate_dataset_manifest(manifest, minimum_slice_counts=minimum_slices)
+                payload = {"valid": not issues, "issues": [item.to_dict() for item in issues]}
+                exit_code = 0 if not issues else 2
+            else:
+                difference = diff_dataset_manifests(
+                    load_dataset_manifest(args.before), load_dataset_manifest(args.after)
+                )
+                payload = difference.to_dict()
+                exit_code = 0
+        except (ContractError, OSError, ValueError) as exc:
+            raise SystemExit(f"dataset error: {exc}") from exc
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return exit_code
     if args.command == "demo":
@@ -824,6 +897,35 @@ def main() -> int:
     else:
         print(rendered)
     return 0 if report.passed else 2
+
+
+def _named_csv_values(values: list[str], label: str) -> dict[str, tuple[str, ...]]:
+    result = {}
+    for value in values:
+        if "=" not in value:
+            raise ContractError(f"{label} must use NAME=VALUE,VALUE")
+        name, raw_items = value.split("=", 1)
+        items = tuple(item for item in raw_items.split(",") if item)
+        if not name or not items or name in result:
+            raise ContractError(f"{label} names must be non-empty and unique")
+        result[name] = items
+    return result
+
+
+def _named_int_values(values: list[str], label: str) -> dict[str, int]:
+    result = {}
+    for value in values:
+        if "=" not in value:
+            raise ContractError(f"{label} must use SELECTOR=COUNT")
+        selector, raw_count = value.rsplit("=", 1)
+        try:
+            count = int(raw_count)
+        except ValueError as exc:
+            raise ContractError(f"{label} count must be an integer") from exc
+        if not selector or selector in result or count <= 0:
+            raise ContractError(f"{label} selectors must be non-empty, unique, and positive")
+        result[selector] = count
+    return result
 
 
 def _evaluators_from_names(
