@@ -61,4 +61,4 @@ jobs:
           test "$(find release-assets -maxdepth 1 -name 'ragops-*.tar.gz' | wc -l)" -eq 1
           cp release-assets/ragops-*.whl release-assets/ragops-*.tar.gz dist/
       - name: Publish distributions with Trusted Publishing
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+        uses: pypa/gh-action-pypi-publish@a892a5a61159132606e93a2fa6f4358831b04d26 # v1.14.2
