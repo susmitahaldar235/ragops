@@ -51,6 +51,7 @@ from ragops.drift import detect_evaluator_drift
 from ragops.engine import compare, evaluate
 from ragops.evidence import create_evidence_bundle, verify_evidence_bundle
 from ragops.explain import explain_decision
+from ragops.governance import GovernanceStore
 from ragops.loader import ContractError, load_responses, load_scenario
 from ragops.pilot import (
     PilotContractError,
@@ -170,6 +171,33 @@ def build_parser() -> argparse.ArgumentParser:
     adapter_convert.add_argument("--input", required=True)
     adapter_convert.add_argument("--case-id", action="append", default=[])
     adapter_convert.add_argument("--output", required=True)
+    governance = commands.add_parser("governance", help="Manage governed artifacts and blind reviews")
+    governance_commands = governance.add_subparsers(dest="governance_command", required=True)
+    governance_register = governance_commands.add_parser("register")
+    governance_register.add_argument("--store", required=True)
+    governance_register.add_argument("--artifact-id", required=True)
+    governance_register.add_argument("--kind", required=True)
+    governance_register.add_argument("--digest", required=True)
+    governance_register.add_argument("--metadata", required=True)
+    governance_register.add_argument("--blinded-metadata")
+    governance_register.add_argument("--actor", required=True)
+    governance_transition = governance_commands.add_parser("transition")
+    governance_transition.add_argument("--store", required=True)
+    governance_transition.add_argument("--artifact-id", required=True)
+    governance_transition.add_argument("--state", choices=("reviewed", "accepted", "superseded"), required=True)
+    governance_transition.add_argument("--actor", required=True)
+    governance_review = governance_commands.add_parser("review")
+    governance_review.add_argument("--store", required=True)
+    governance_review.add_argument("--artifact-id", required=True)
+    governance_review.add_argument("--reviewer", required=True)
+    governance_review.add_argument("--verdict", choices=("approve", "block"), required=True)
+    governance_review.add_argument("--note", default="")
+    governance_queue = governance_commands.add_parser("queue")
+    governance_queue.add_argument("--store", required=True)
+    governance_queue.add_argument("--reviewer", required=True)
+    governance_audit = governance_commands.add_parser("audit")
+    governance_audit.add_argument("--store", required=True)
+    governance_audit.add_argument("--artifact-id")
     demo_parser = commands.add_parser("demo", help="Generate a credential-free release-gate demo")
     demo_parser.add_argument("--output", default="ragops-demo")
     demo_parser.add_argument(
@@ -587,6 +615,36 @@ def main() -> int:
                 )
         except (ContractError, OSError, json.JSONDecodeError, ValueError) as exc:
             raise SystemExit(f"adapter error: {exc}") from exc
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "governance":
+        try:
+            governance_store = GovernanceStore(args.store)
+            if args.governance_command == "register":
+                public = json.loads(Path(args.metadata).read_text(encoding="utf-8"))
+                blinded = (
+                    json.loads(Path(args.blinded_metadata).read_text(encoding="utf-8"))
+                    if args.blinded_metadata else {}
+                )
+                governance_store.register_artifact(
+                    args.artifact_id, kind=args.kind, digest=args.digest,
+                    public_metadata=public, blinded_metadata=blinded, actor=args.actor,
+                )
+                payload = governance_store.get_artifact(args.artifact_id)
+            elif args.governance_command == "transition":
+                governance_store.transition(args.artifact_id, args.state, actor=args.actor)
+                payload = governance_store.get_artifact(args.artifact_id)
+            elif args.governance_command == "review":
+                governance_store.record_review(
+                    args.artifact_id, reviewer=args.reviewer, verdict=args.verdict, note=args.note
+                )
+                payload = {"recorded": True}
+            elif args.governance_command == "queue":
+                payload = {"artifacts": governance_store.review_queue(args.reviewer)}
+            else:
+                payload = {"events": governance_store.audit_events(args.artifact_id)}
+        except (KeyError, ValueError, OSError, json.JSONDecodeError) as exc:
+            raise SystemExit(f"governance error: {exc}") from exc
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return 0
     if args.command == "demo":
