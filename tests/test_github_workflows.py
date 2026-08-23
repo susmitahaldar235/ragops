@@ -3,12 +3,21 @@ from pathlib import Path
 WORKFLOW_ROOT = Path(".github/workflows")
 
 
-def test_repository_only_has_release_publisher() -> None:
-    assert sorted(path.name for path in WORKFLOW_ROOT.iterdir()) == ["publish-pypi.yml"]
+def test_repository_has_consumer_ci_and_separate_release_publisher() -> None:
+    assert sorted(path.name for path in WORKFLOW_ROOT.iterdir()) == ["ci.yml", "publish-pypi.yml"]
     workflow = (WORKFLOW_ROOT / "publish-pypi.yml").read_text(encoding="utf-8")
     assert "id-token: write" in workflow
     assert "environment: pypi" in workflow
     assert "pull_request" not in workflow
+    ci = (WORKFLOW_ROOT / "ci.yml").read_text(encoding="utf-8")
+    assert "pull_request:" in ci
+    assert 'python-version: ${{ matrix.python-version }}' in ci
+    assert '["3.11", "3.12", "3.13"]' in ci
+    assert "ruff check ." in ci
+    assert "pytest -q" in ci
+    assert "ragops demo" in ci
+    assert "evidence verify" in ci
+    assert "id-token: write" not in ci
 
 
 def test_current_operations_are_linked() -> None:

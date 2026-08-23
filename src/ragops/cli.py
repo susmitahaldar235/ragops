@@ -211,6 +211,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="Credential-free workflow scenario to generate",
     )
     demo_parser.add_argument(
+        "--profile", choices=("executive", "engineer", "auditor"), default="engineer"
+    )
+    demo_parser.add_argument(
         "--force",
         action="store_true",
         help="Replace regular demo files in an existing non-symlink directory",
@@ -662,7 +665,9 @@ def main() -> int:
         return 0
     if args.command == "demo":
         try:
-            summary = write_demo(args.output, force=args.force, scenario_id=args.scenario)
+            summary = write_demo(
+                args.output, force=args.force, scenario_id=args.scenario, profile=args.profile
+            )
         except (OSError, ValueError) as exc:
             raise SystemExit(f"demo output error: {exc}") from exc
         print(json.dumps(summary, ensure_ascii=False, indent=2))

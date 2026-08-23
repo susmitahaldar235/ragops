@@ -1,6 +1,8 @@
-# Local governance workflow
+# Governance and review
 
-The SQLite governance ledger keeps artifact digests, lifecycle state, append-only reviews, waivers, and audit events locally. Its state machine is `draft -> reviewed -> accepted -> superseded`; acceptance requires at least one approval.
+`ragops governance` stores artifact digests, lifecycle state, append-only reviews, waivers, and audit events in local SQLite. The valid lifecycle is `draft -> reviewed -> accepted -> superseded`; acceptance requires an approval review.
+
+Reviewer-specific queues hide candidate/provider metadata until that reviewer votes. This reduces anchoring bias but is not a substitute for access control: protect the database with normal filesystem controls. Verify the referenced evidence bundle before accepting an artifact.
 
 ```bash
 ragops governance register --store .ragops/governance.db \
@@ -12,5 +14,3 @@ ragops governance queue --store .ragops/governance.db --reviewer alice
 ragops governance review --store .ragops/governance.db \
   --artifact-id release-2026-08-23 --reviewer alice --verdict approve
 ```
-
-Candidate/provider metadata stays hidden from each reviewer until that reviewer records a vote. The audit log and artifact/review update share the same SQLite transaction.
