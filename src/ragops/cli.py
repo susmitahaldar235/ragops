@@ -6,10 +6,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from ragops import __version__
+from ragops.adapter_sdk import AdapterContext, discover_adapters
 from ragops.adapters.external_metrics import (
     load_external_metric_evaluator,
     validate_external_metric_pair,
 )
+from ragops.adapters.import_profiles import convert_import
 from ragops.adapters.otel_genai import otel_spans_to_trace_graph
 from ragops.adapters.repeated_runs import (
     CommandMetricAdapter,
@@ -160,6 +162,14 @@ def build_parser() -> argparse.ArgumentParser:
     ci_render.add_argument("--input", required=True)
     ci_render.add_argument("--format", choices=("junit", "sarif", "github"), required=True)
     ci_render.add_argument("--output", required=True)
+    adapter_parser = commands.add_parser("adapter", help="Discover and run portable import adapters")
+    adapter_commands = adapter_parser.add_subparsers(dest="adapter_command", required=True)
+    adapter_commands.add_parser("list", help="List built-in and installed adapters")
+    adapter_convert = adapter_commands.add_parser("convert", help="Convert vendor JSON to a portable envelope")
+    adapter_convert.add_argument("--profile", required=True)
+    adapter_convert.add_argument("--input", required=True)
+    adapter_convert.add_argument("--case-id", action="append", default=[])
+    adapter_convert.add_argument("--output", required=True)
     demo_parser = commands.add_parser("demo", help="Generate a credential-free release-gate demo")
     demo_parser.add_argument("--output", default="ragops-demo")
     demo_parser.add_argument(
@@ -559,6 +569,25 @@ def main() -> int:
                 print(rendered, end="")
         except (ContractError, OSError, ValueError) as exc:
             raise SystemExit(f"release explanation error: {exc}") from exc
+        return 0
+    if args.command == "adapter":
+        try:
+            if args.adapter_command == "list":
+                payload = {"adapters": [item.to_dict() for item in discover_adapters()]}
+            else:
+                raw = json.loads(Path(args.input).read_text(encoding="utf-8"))
+                converted = convert_import(
+                    args.profile, raw, AdapterContext(case_ids=tuple(args.case_id))
+                )
+                payload = converted.to_dict()
+                output = Path(args.output)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(
+                    json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+                )
+        except (ContractError, OSError, json.JSONDecodeError, ValueError) as exc:
+            raise SystemExit(f"adapter error: {exc}") from exc
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
         return 0
     if args.command == "demo":
         try:
