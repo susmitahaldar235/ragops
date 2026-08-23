@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 from ragops import __version__
@@ -36,6 +37,7 @@ from ragops.control_plane import ControlPlane
 from ragops.demo import DEFAULT_DEMO_SCENARIO, DEMO_BUNDLES, write_demo
 from ragops.drift import detect_evaluator_drift
 from ragops.engine import compare, evaluate
+from ragops.evidence import create_evidence_bundle, verify_evidence_bundle
 from ragops.loader import ContractError, load_responses, load_scenario
 from ragops.pilot import (
     PilotContractError,
@@ -89,6 +91,17 @@ def build_parser() -> argparse.ArgumentParser:
     contract_migrate.add_argument("--input", required=True)
     contract_migrate.add_argument("--output", required=True)
     contract_migrate.add_argument("--question", default="")
+    evidence_parser = commands.add_parser("evidence", help="Create and verify evidence bundles")
+    evidence_commands = evidence_parser.add_subparsers(dest="evidence_command", required=True)
+    evidence_create = evidence_commands.add_parser("create", help="Create an evidence bundle")
+    evidence_create.add_argument("--bundle", required=True)
+    evidence_create.add_argument("--decision", choices=("PASS", "WARN", "BLOCK"), required=True)
+    evidence_create.add_argument("--artifact", action="append", required=True, metavar="NAME=PATH")
+    evidence_create.add_argument("--limitation", action="append", required=True)
+    evidence_create.add_argument("--created-at")
+    evidence_create.add_argument("--metadata-json", default="{}")
+    evidence_verify = evidence_commands.add_parser("verify", help="Verify an evidence bundle")
+    evidence_verify.add_argument("--bundle", required=True)
     demo_parser = commands.add_parser("demo", help="Generate a credential-free release-gate demo")
     demo_parser.add_argument("--output", default="ragops-demo")
     demo_parser.add_argument(
@@ -330,6 +343,35 @@ def main() -> int:
                     }
         except (ContractError, OSError, json.JSONDecodeError) as exc:
             raise SystemExit(f"contract error: {exc}") from exc
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "evidence":
+        try:
+            if args.evidence_command == "verify":
+                manifest = verify_evidence_bundle(args.bundle)
+                payload = {"verified": True, **manifest.to_dict()}
+            else:
+                artifact_paths = {}
+                for value in args.artifact:
+                    if "=" not in value:
+                        raise ContractError("Evidence artifacts must use NAME=PATH")
+                    name, raw_path = value.split("=", 1)
+                    if name in artifact_paths:
+                        raise ContractError(f"Duplicate evidence artifact name: {name}")
+                    artifact_paths[name] = raw_path
+                created_at = args.created_at or datetime.now(UTC).isoformat().replace("+00:00", "Z")
+                metadata = json.loads(args.metadata_json)
+                manifest = create_evidence_bundle(
+                    args.bundle,
+                    artifact_paths,
+                    args.decision,
+                    tuple(args.limitation),
+                    created_at,
+                    metadata,
+                )
+                payload = manifest.to_dict()
+        except (ContractError, FileExistsError, OSError, json.JSONDecodeError) as exc:
+            raise SystemExit(f"evidence error: {exc}") from exc
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return 0
     if args.command == "demo":
