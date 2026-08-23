@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 import tomllib
 from dataclasses import asdict, dataclass, replace
@@ -95,6 +96,61 @@ class ReleaseDecision:
             "passed": self.passed,
             "gates": [gate.to_dict() for gate in self.gates],
         }
+
+
+def load_release_decision(path: str | Path) -> ReleaseDecision:
+    try:
+        raw = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ContractError(f"Cannot load release decision from {path}: {exc}") from exc
+    if not isinstance(raw, dict):
+        raise ContractError("Release decision must be a JSON object")
+    expected = {"schema_version", "scenario_id", "decision", "passed", "gates"}
+    if set(raw) != expected or not isinstance(raw["gates"], list):
+        raise ContractError(f"Release decision fields must be {sorted(expected)}")
+    gates = tuple(_gate_evidence_from_dict(item, index) for index, item in enumerate(raw["gates"]))
+    decision = raw["decision"]
+    if decision not in {"PASS", "WARN", "BLOCK"}:
+        raise ContractError("Release decision must be PASS, WARN, or BLOCK")
+    if not isinstance(raw["passed"], bool) or raw["passed"] != (decision == "PASS"):
+        raise ContractError("Release decision passed flag must match decision")
+    if raw["schema_version"] != "1.0" or not isinstance(raw["scenario_id"], str):
+        raise ContractError("Unsupported release decision contract")
+    return ReleaseDecision("1.0", raw["scenario_id"], decision, raw["passed"], gates)
+
+
+def _gate_evidence_from_dict(value: object, index: int) -> GateEvidence:
+    if not isinstance(value, dict):
+        raise ContractError(f"Release decision gate {index} must be an object")
+    required = {
+        "id", "metric", "scope", "observed", "threshold", "comparator", "passed",
+        "severity", "policy_path", "case_ids", "waived", "waiver_owner", "waiver_reason",
+        "waiver_expires_at",
+    }
+    if set(value) != required:
+        raise ContractError(f"Release decision gate {index} fields must be {sorted(required)}")
+    if value["comparator"] not in {">=", "<="} or value["severity"] not in {"warn", "block"}:
+        raise ContractError(f"Release decision gate {index} has invalid comparator or severity")
+    if not isinstance(value["case_ids"], list) or not all(
+        isinstance(item, str) for item in value["case_ids"]
+    ):
+        raise ContractError(f"Release decision gate {index} case_ids must be strings")
+    return GateEvidence(
+        id=str(value["id"]),
+        metric=str(value["metric"]),
+        scope=str(value["scope"]),
+        observed=_finite(value["observed"], f"gate {index} observed"),
+        threshold=_finite(value["threshold"], f"gate {index} threshold"),
+        comparator=value["comparator"],
+        passed=bool(value["passed"]),
+        severity=value["severity"],
+        policy_path=str(value["policy_path"]),
+        case_ids=tuple(value["case_ids"]),
+        waived=bool(value["waived"]),
+        waiver_owner=value["waiver_owner"],
+        waiver_reason=value["waiver_reason"],
+        waiver_expires_at=value["waiver_expires_at"],
+    )
 
 
 def load_release_policy_v2(path: str | Path) -> ReleasePolicyV2:

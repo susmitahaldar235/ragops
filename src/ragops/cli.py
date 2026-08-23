@@ -27,6 +27,7 @@ from ragops.baseline import (
 )
 from ragops.benchmarks import scenario_summary
 from ragops.calibration import calibrate_evaluator, load_calibration_set
+from ragops.ci import render_ci
 from ragops.config import (
     load_evaluation_policy,
     load_evaluator_drift_policy,
@@ -47,6 +48,7 @@ from ragops.demo import DEFAULT_DEMO_SCENARIO, DEMO_BUNDLES, write_demo
 from ragops.drift import detect_evaluator_drift
 from ragops.engine import compare, evaluate
 from ragops.evidence import create_evidence_bundle, verify_evidence_bundle
+from ragops.explain import explain_decision
 from ragops.loader import ContractError, load_responses, load_scenario
 from ragops.pilot import (
     PilotContractError,
@@ -65,7 +67,7 @@ from ragops.plugins import (
     RetrievalRecallEvaluator,
     SourceFreshnessEvaluator,
 )
-from ragops.policy_v2 import apply_release_policy, load_release_policy_v2
+from ragops.policy_v2 import apply_release_policy, load_release_decision, load_release_policy_v2
 from ragops.provenance import diagnose_provenance
 from ragops.reporters import (
     comparison_html,
@@ -151,6 +153,13 @@ def build_parser() -> argparse.ArgumentParser:
     dataset_diff = dataset_commands.add_parser("diff", help="Diff dataset manifests")
     dataset_diff.add_argument("--before", required=True)
     dataset_diff.add_argument("--after", required=True)
+    explain_parser = commands.add_parser("explain", help="Explain failed release gates")
+    explain_parser.add_argument("--input", required=True)
+    explain_parser.add_argument("--output")
+    ci_render = commands.add_parser("ci-render", help="Render release decisions for CI systems")
+    ci_render.add_argument("--input", required=True)
+    ci_render.add_argument("--format", choices=("junit", "sarif", "github"), required=True)
+    ci_render.add_argument("--output", required=True)
     demo_parser = commands.add_parser("demo", help="Generate a credential-free release-gate demo")
     demo_parser.add_argument("--output", default="ragops-demo")
     demo_parser.add_argument(
@@ -535,6 +544,22 @@ def main() -> int:
             raise SystemExit(f"dataset error: {exc}") from exc
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return exit_code
+    if args.command in {"explain", "ci-render"}:
+        try:
+            decision = load_release_decision(args.input)
+            if args.command == "explain":
+                rendered = json.dumps(explain_decision(decision).to_dict(), ensure_ascii=False, indent=2) + "\n"
+            else:
+                rendered = render_ci(decision, args.format)
+            if args.output:
+                output = Path(args.output)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(rendered, encoding="utf-8")
+            else:
+                print(rendered, end="")
+        except (ContractError, OSError, ValueError) as exc:
+            raise SystemExit(f"release explanation error: {exc}") from exc
+        return 0
     if args.command == "demo":
         try:
             summary = write_demo(args.output, force=args.force, scenario_id=args.scenario)
