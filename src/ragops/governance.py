@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -37,6 +38,8 @@ class GovernanceStore:
             raise ValueError("artifact ID, kind, and actor are required")
         if not SHA256.fullmatch(digest):
             raise ValueError("artifact digest must be a lowercase SHA-256")
+        public_json = _metadata_json(public_metadata)
+        blinded_json = _metadata_json(blinded_metadata)
         created_at = _now()
         try:
             with self._connect() as connection:
@@ -47,7 +50,7 @@ class GovernanceStore:
                     VALUES (?, ?, ?, 'draft', ?, ?, ?, ?)
                     """,
                     (
-                        artifact_id, kind, digest, _json(public_metadata), _json(blinded_metadata),
+                        artifact_id, kind, digest, public_json, blinded_json,
                         created_at, created_at,
                     ),
                 )
@@ -283,6 +286,18 @@ class GovernanceStore:
 
 def _json(value: dict[str, Any]) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _metadata_json(value: object) -> str:
+    if not isinstance(value, Mapping):
+        raise ValueError("artifact metadata must be a JSON object")
+    try:
+        encoded = json.dumps(
+            dict(value), ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError("artifact metadata must contain finite JSON values") from exc
+    return encoded
 
 
 def _now() -> str:

@@ -3,10 +3,13 @@ from __future__ import annotations
 import json
 import xml.etree.ElementTree as ET
 
+import pytest
+
 from ragops.ci import github_summary, junit_xml, sarif_report
 from ragops.cli import main
 from ragops.explain import explain_decision
-from ragops.policy_v2 import GateEvidence, ReleaseDecision
+from ragops.loader import ContractError
+from ragops.policy_v2 import GateEvidence, ReleaseDecision, load_release_decision
 
 
 def _decision() -> ReleaseDecision:
@@ -115,3 +118,14 @@ def test_explain_cli_renders_all_ci_formats(tmp_path, monkeypatch, capsys):
         )
         assert main() == 0
         assert output.stat().st_size > 20
+
+
+@pytest.mark.parametrize(("field", "value"), [("passed", "false"), ("waived", 0), ("id", 42)])
+def test_release_decision_loader_rejects_type_coercion(tmp_path, field, value):
+    payload = _decision().to_dict()
+    payload["gates"][0][field] = value
+    source = tmp_path / "decision.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ContractError):
+        load_release_decision(source)

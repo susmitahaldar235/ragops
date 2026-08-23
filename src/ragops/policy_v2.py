@@ -114,8 +114,23 @@ def load_release_decision(path: str | Path) -> ReleaseDecision:
         raise ContractError("Release decision must be PASS, WARN, or BLOCK")
     if not isinstance(raw["passed"], bool) or raw["passed"] != (decision == "PASS"):
         raise ContractError("Release decision passed flag must match decision")
-    if raw["schema_version"] != "1.0" or not isinstance(raw["scenario_id"], str):
+    if (
+        raw["schema_version"] != "1.0"
+        or not isinstance(raw["scenario_id"], str)
+        or not raw["scenario_id"]
+    ):
         raise ContractError("Unsupported release decision contract")
+    unwaived_failures = [gate for gate in gates if not gate.passed and not gate.waived]
+    if any(gate.severity == "block" for gate in unwaived_failures):
+        expected_decision = "BLOCK"
+    elif unwaived_failures or any(gate.waived for gate in gates):
+        expected_decision = "WARN"
+    else:
+        expected_decision = "PASS"
+    if decision != expected_decision:
+        raise ContractError(
+            f"Release decision {decision} does not match gate evidence {expected_decision}"
+        )
     return ReleaseDecision("1.0", raw["scenario_id"], decision, raw["passed"], gates)
 
 
@@ -131,22 +146,41 @@ def _gate_evidence_from_dict(value: object, index: int) -> GateEvidence:
         raise ContractError(f"Release decision gate {index} fields must be {sorted(required)}")
     if value["comparator"] not in {">=", "<="} or value["severity"] not in {"warn", "block"}:
         raise ContractError(f"Release decision gate {index} has invalid comparator or severity")
+    string_fields = ("id", "metric", "scope", "policy_path")
+    if any(not isinstance(value[field], str) or not value[field] for field in string_fields):
+        raise ContractError(f"Release decision gate {index} identifiers must be non-empty strings")
+    if not isinstance(value["passed"], bool) or not isinstance(value["waived"], bool):
+        raise ContractError(f"Release decision gate {index} passed and waived must be boolean")
     if not isinstance(value["case_ids"], list) or not all(
         isinstance(item, str) for item in value["case_ids"]
     ):
         raise ContractError(f"Release decision gate {index} case_ids must be strings")
+    observed = _finite(value["observed"], f"gate {index} observed")
+    threshold = _finite(value["threshold"], f"gate {index} threshold")
+    expected_passed = observed >= threshold if value["comparator"] == ">=" else observed <= threshold
+    if value["passed"] != expected_passed:
+        raise ContractError(f"Release decision gate {index} passed flag contradicts evidence")
+    waiver_fields = ("waiver_owner", "waiver_reason", "waiver_expires_at")
+    if value["waived"]:
+        if value["passed"] or any(
+            not isinstance(value[field], str) or not value[field] for field in waiver_fields
+        ):
+            raise ContractError(f"Release decision gate {index} has invalid waiver evidence")
+        _timestamp(value["waiver_expires_at"], f"gate {index} waiver expiry")
+    elif any(value[field] is not None for field in waiver_fields):
+        raise ContractError(f"Release decision gate {index} has undeclared waiver fields")
     return GateEvidence(
-        id=str(value["id"]),
-        metric=str(value["metric"]),
-        scope=str(value["scope"]),
-        observed=_finite(value["observed"], f"gate {index} observed"),
-        threshold=_finite(value["threshold"], f"gate {index} threshold"),
+        id=value["id"],
+        metric=value["metric"],
+        scope=value["scope"],
+        observed=observed,
+        threshold=threshold,
         comparator=value["comparator"],
-        passed=bool(value["passed"]),
+        passed=value["passed"],
         severity=value["severity"],
-        policy_path=str(value["policy_path"]),
+        policy_path=value["policy_path"],
         case_ids=tuple(value["case_ids"]),
-        waived=bool(value["waived"]),
+        waived=value["waived"],
         waiver_owner=value["waiver_owner"],
         waiver_reason=value["waiver_reason"],
         waiver_expires_at=value["waiver_expires_at"],

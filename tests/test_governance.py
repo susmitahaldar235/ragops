@@ -121,3 +121,13 @@ def test_governance_cli_registers_and_reads_artifact(tmp_path, monkeypatch, caps
     )
     assert main() == 0
     assert json.loads(capsys.readouterr().out)["events"][0]["action"] == "artifact.registered"
+
+
+def test_artifact_metadata_must_be_json_objects(tmp_path):
+    store = GovernanceStore(tmp_path / "governance.db")
+
+    with pytest.raises(ValueError, match="metadata must be a JSON object"):
+        store.register_artifact(
+            "eval-1", kind="decision", digest=_digest(), public_metadata=[],
+            blinded_metadata={}, actor="ci",
+        )
