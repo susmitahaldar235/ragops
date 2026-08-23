@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ragops"
-version = "1.2.0"
+version = "2.0.0"
 description = "Regression tests and explainable release gates for RAG and AI agents"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -33,12 +33,19 @@ Changelog = "https://github.com/thangldw/ragops/blob/main/CHANGELOG.md"
 [project.optional-dependencies]
 api = ["fastapi>=0.115", "uvicorn>=0.30"]
 dev = ["pytest>=8.0", "ruff>=0.6", "fastapi>=0.115", "jsonschema>=4.23"]
+release = ["build>=1.2", "cyclonedx-bom>=7.3", "twine>=5.1"]
 
 [project.scripts]
 ragops = "ragops.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ragops"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"schemas" = "ragops/schemas"
+"src/ragops/web/index.html" = "ragops/web/index.html"
+"src/ragops/web/app.js" = "ragops/web/app.js"
+"src/ragops/web/styles.css" = "ragops/web/styles.css"
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]
