@@ -1,0 +1,74 @@
+[
+  {
+    "case_id": "refund-30days",
+    "answer": "Yes, you can get a full refund. Our policy allows full refunds within 30 days of purchase as long as the product is unused and in original packaging. Refunds are processed to your original payment method within 5-7 business days.",
+    "citation_ids": [
+      "policy-refund"
+    ],
+    "latency_ms": 870,
+    "cost_usd": 0.012
+  },
+  {
+    "case_id": "shipping-delay-compensation",
+    "answer": "For delays over 5 business days, you qualify for a 25% discount on your next order plus free express shipping. If your order was completely lost, you'd receive a full refund plus a 15% credit.",
+    "citation_ids": [
+      "compensation-discount"
+    ],
+    "latency_ms": 907,
+    "cost_usd": 0.015
+  },
+  {
+    "case_id": "warranty-coverage",
+    "answer": "No, accidental damage is not covered by our standard 1-year manufacturer warranty. The warranty covers manufacturing defects only. If you purchased an extended warranty within 30 days of purchase, that may cover accidental damage.",
+    "citation_ids": [
+      "policy-warranty"
+    ],
+    "latency_ms": 761,
+    "cost_usd": 0.01
+  },
+  {
+    "case_id": "data-deletion-request",
+    "answer": "You can request data deletion, but please note that personal data must be retained for up to 10 years for tax compliance. You can initiate data deletion through account settings, and any deletable data will be processed within 30 days of account closure.",
+    "citation_ids": [
+      "policy-privacy"
+    ],
+    "latency_ms": 807,
+    "cost_usd": 0.011
+  },
+  {
+    "case_id": "loyalty-tier-upgrade",
+    "answer": "To reach Gold status, you need $1,000 in annual spend. Gold members earn 2% cashback instead of the standard 1%. Platinum tier at $3,000 annual spend gives 3% cashback.",
+    "citation_ids": [
+      "policy-loyalty"
+    ],
+    "latency_ms": 685,
+    "cost_usd": 0.008
+  },
+  {
+    "case_id": "return-60days",
+    "answer": "Yes, returns are accepted within 60 days of delivery. You can initiate the return on our website, where you'll receive a prepaid return label. We'll issue your refund after receiving and inspecting the returned item.",
+    "citation_ids": [
+      "policy-return"
+    ],
+    "latency_ms": 744,
+    "cost_usd": 0.009
+  },
+  {
+    "case_id": "international-shipping",
+    "answer": "International orders typically take 7-14 business days to arrive. For reference, our standard domestic shipping is 3-5 business days and express is 1-2 business days.",
+    "citation_ids": [
+      "policy-shipping"
+    ],
+    "latency_ms": 668,
+    "cost_usd": 0.008
+  },
+  {
+    "case_id": "p0-incident-response",
+    "answer": "For a P0 incident, the response time target is 15 minutes. You need to immediately escalate to the on-call engineering lead and document the incident in the incident channel within 30 minutes of detection.",
+    "citation_ids": [
+      "escalation-p0"
+    ],
+    "latency_ms": 696,
+    "cost_usd": 0.007
+  }
+]

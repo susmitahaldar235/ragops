@@ -1,0 +1,65 @@
+name: Publish package to PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing RAGOps release tag to publish
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Verify tag and package version
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          python - "$RELEASE_TAG" <<'PY'
+          import sys
+          import tomllib
+          from pathlib import Path
+
+          tag = sys.argv[1]
+          version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+          parts = version.split(".")
+          if len(parts) != 3 or not all(part.isdigit() for part in parts):
+              raise SystemExit("package version must use numeric MAJOR.MINOR.PATCH")
+          expected_tag = f"v{version}"
+          if tag != expected_tag:
+              raise SystemExit(
+                  f"tag {tag!r} does not match package version {version!r}"
+              )
+          print(f"publishing ragops {version}")
+          PY
+      - name: Download promoted GitHub Release artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          mkdir release-assets dist
+          gh release download "$RELEASE_TAG" \
+            --pattern 'ragops-*.whl' \
+            --pattern 'ragops-*.tar.gz' \
+            --pattern 'ragops-*.cdx.json' \
+            --pattern 'ragops-chatgpt-plugin-*.zip' \
+            --pattern 'SHA256SUMS' \
+            --dir release-assets
+          (cd release-assets && sha256sum --check SHA256SUMS)
+          test "$(find release-assets -maxdepth 1 -name 'ragops-*.whl' | wc -l)" -eq 1
+          test "$(find release-assets -maxdepth 1 -name 'ragops-*.tar.gz' | wc -l)" -eq 1
+          cp release-assets/ragops-*.whl release-assets/ragops-*.tar.gz dist/
+      - name: Publish distributions with Trusted Publishing
+        # Upstream container images are published for exact release tags, not commit-SHA refs.
+        uses: pypa/gh-action-pypi-publish@v1.14.2

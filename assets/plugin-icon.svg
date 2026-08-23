@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">RAGOps</title>
+  <rect width="256" height="256" rx="48" fill="#fffdf8"/>
+  <path d="M58 82h93l-18-18 14-14 42 42-42 42-14-14 18-18H58z" fill="#6c5cff"/>
+  <path d="M198 174h-93l18 18-14 14-42-42 42-42 14 14-18 18h93z" fill="#17152f"/>
+  <circle cx="58" cy="82" r="16" fill="#b5ddf5" stroke="#17152f" stroke-width="8"/>
+  <circle cx="198" cy="174" r="16" fill="#f5b3d3" stroke="#17152f" stroke-width="8"/>
+</svg>

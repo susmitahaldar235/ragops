@@ -1,3 +1,8 @@
+---
+name: ragops-feature
+description: Implement or review a RAGOps capability or repository contract while preserving evaluation semantics, compatibility, offline behavior, and release evidence.
+---
+
 # RAGOps feature workflow
 
 Use for any new or changed capability or repository contract.

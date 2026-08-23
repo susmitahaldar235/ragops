@@ -1,0 +1,74 @@
+[
+  {
+    "id": "policy-refund",
+    "title": "Refund Policy",
+    "text": "Customers can request a full refund within 30 days of purchase. The product must be unused and in original packaging. Refunds are processed within 5-7 business days to the original payment method.",
+    "category": "refund",
+    "authority_level": "high",
+    "last_updated": "2026-06-15",
+    "department": "Customer Success"
+  },
+  {
+    "id": "policy-shipping",
+    "title": "Shipping Policy",
+    "text": "Standard shipping takes 3-5 business days. Express shipping takes 1-2 business days. For orders over $100, free standard shipping is provided. International orders may take 7-14 days.",
+    "category": "shipping",
+    "authority_level": "high",
+    "last_updated": "2026-05-20",
+    "department": "Logistics"
+  },
+  {
+    "id": "policy-return",
+    "title": "Return Policy",
+    "text": "Returns are accepted within 60 days of delivery. Customers must initiate returns through the website. TechRetail provides a prepaid return label. Refund issued after we receive and inspect the returned item.",
+    "category": "return",
+    "authority_level": "high",
+    "last_updated": "2026-06-01",
+    "department": "Customer Success"
+  },
+  {
+    "id": "policy-warranty",
+    "title": "Warranty Terms",
+    "text": "All TechRetail electronics come with a 1-year manufacturer warranty. Extended warranty available for purchase within 30 days of purchase. Warranty covers manufacturing defects, not accidental damage.",
+    "category": "warranty",
+    "authority_level": "high",
+    "last_updated": "2026-04-10",
+    "department": "Quality Assurance"
+  },
+  {
+    "id": "escalation-p0",
+    "title": "P0 Incident Escalation",
+    "text": "P0 incidents require immediate escalation to the on-call engineering lead. Response time target is 15 minutes. All P0 incidents must be documented in the incident channel within 30 minutes of detection.",
+    "category": "incident",
+    "authority_level": "critical",
+    "last_updated": "2026-07-01",
+    "department": "Engineering"
+  },
+  {
+    "id": "policy-loyalty",
+    "title": "Loyalty Program",
+    "text": "Loyalty members earn 1% cashback on all purchases. Members can upgrade to Gold (2% cashback) at $1000 annual spend. Platinum (3%) at $3000 annual spend. Points expire after 12 months of inactivity.",
+    "category": "loyalty",
+    "authority_level": "medium",
+    "last_updated": "2026-03-15",
+    "department": "Marketing"
+  },
+  {
+    "id": "policy-privacy",
+    "title": "Privacy Policy",
+    "text": "Customer data is encrypted at rest and in transit. We do not sell customer data to third parties. Customers can request data deletion within 30 days of account closure. Personal data is retained for up to 10 years for tax compliance.",
+    "category": "privacy",
+    "authority_level": "critical",
+    "last_updated": "2026-06-01",
+    "department": "Legal"
+  },
+  {
+    "id": "compensation-discount",
+    "title": "Compensation Policy",
+    "text": "For shipping delays over 2 business days: 10% discount on next order. For over 5 business days: 25% discount + free express shipping on next order. For lost orders: full refund + 15% credit.",
+    "category": "compensation",
+    "authority_level": "high",
+    "last_updated": "2026-05-01",
+    "department": "Customer Success"
+  }
+]

@@ -1,3 +1,8 @@
+---
+name: ragops-presentation
+description: Create or review RAGOps website, README, demo, portfolio, or presentation materials using measured evidence and the product visual system.
+---
+
 # RAGOps presentation workflow
 
 Use for the website, README visuals, portfolio material, demos, or talks.

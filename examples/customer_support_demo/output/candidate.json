@@ -1,0 +1,70 @@
+[
+  {
+    "case_id": "refund-30days",
+    "answer": "Yes, you can get a full refund within 30 days. Just return the product in original packaging. You'll get a refund to your original payment method in 5-7 business days.",
+    "citation_ids": [],
+    "latency_ms": 360,
+    "cost_usd": 0.004
+  },
+  {
+    "case_id": "shipping-delay-compensation",
+    "answer": "For delays over 5 days, we'll give you a 50% discount on your next order and free express shipping. If your order is lost, you get a full refund plus a 20% credit.",
+    "citation_ids": [
+      "compensation-discount"
+    ],
+    "latency_ms": 267,
+    "cost_usd": 0.003
+  },
+  {
+    "case_id": "warranty-coverage",
+    "answer": "If you have an extended warranty, accidental damage is covered. Check your purchase receipt — the extended warranty covers everything including drops and water damage for up to 2 years.",
+    "citation_ids": [
+      "policy-warranty"
+    ],
+    "latency_ms": 241,
+    "cost_usd": 0.003
+  },
+  {
+    "case_id": "data-deletion-request",
+    "answer": "You can delete all your personal data immediately. Go to account settings, click delete account, and confirm. All your data will be permanently removed within 24 hours.",
+    "citation_ids": [],
+    "latency_ms": 247,
+    "cost_usd": 0.002
+  },
+  {
+    "case_id": "loyalty-tier-upgrade",
+    "answer": "Gold status requires $1,000 in annual spend, giving you 2% cashback. Platinum is at $3,000 for 3% cashback.",
+    "citation_ids": [
+      "policy-loyalty"
+    ],
+    "latency_ms": 225,
+    "cost_usd": 0.002
+  },
+  {
+    "case_id": "return-60days",
+    "answer": "Returns are only accepted within 30 days of delivery. You'll need to go to our website to initiate the return process.",
+    "citation_ids": [
+      "policy-return"
+    ],
+    "latency_ms": 234,
+    "cost_usd": 0.002
+  },
+  {
+    "case_id": "international-shipping",
+    "answer": "International shipping takes 7-14 business days to arrive.",
+    "citation_ids": [
+      "policy-shipping"
+    ],
+    "latency_ms": 208,
+    "cost_usd": 0.002
+  },
+  {
+    "case_id": "p0-incident-response",
+    "answer": "Sent email to the on-call engineering lead about the P0 incident. The response target is 5 minutes, and you should document it in the incident channel within 10 minutes.",
+    "citation_ids": [
+      "escalation-p0"
+    ],
+    "latency_ms": 256,
+    "cost_usd": 0.003
+  }
+]

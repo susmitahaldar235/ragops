@@ -7,7 +7,7 @@ flowchart LR
     S["Scenario & policy<br/>Kịch bản / 方針"]:::blue
     C["Dependency-free core<br/>Core offline"]:::purple
     E["Evidence bundle<br/>Bằng chứng / 証拠"]:::pink
-    G{"PASS / WARN / FAIL"}:::green
+    G{"PASS / WARN / BLOCK"}:::green
     T --> C
     S --> C --> E --> G
     classDef yellow fill:#FFF4A3,stroke:#C9A227,stroke-width:2px,color:#172B4D
@@ -19,12 +19,12 @@ flowchart LR
 
 ## English
 
-`src/ragops/` owns portable evaluation semantics, deterministic comparison and statistical gates. `scenarios/` and `schemas/` are versioned contracts. `apps/` contains optional API and GitHub adapters. Reusable workflows are read-only callers of the same core and publish bounded evidence artifacts.
+`src/ragops/` owns portable contracts, deterministic evaluators, slice/distribution analysis, policy decisions, calibration, evidence bundles, adapters, and SQLite governance. `src/ragops/api/` and `src/ragops/web/` are optional packaged adapters; importing the core never imports FastAPI, Uvicorn, or vendor SDKs. `apps/api/main.py` is a source compatibility shim. CLI/API/UI and CI renderers consume the same canonical decision evidence.
 
 ## Tiếng Việt
 
-`src/ragops/` quản lý evaluation portable, so sánh xác định và statistical gate. `scenarios/` cùng `schemas/` là contract có version. `apps/` chứa adapter API/GitHub tùy chọn. Reusable workflow chỉ đọc, gọi cùng core và xuất evidence artifact có giới hạn.
+`src/ragops/` quản lý contract portable, evaluator xác định, policy, calibration, evidence bundle, adapter và SQLite governance. API/UI chỉ là adapter đóng gói tùy chọn; import core không import FastAPI/Uvicorn/vendor SDK. CLI/API/UI/CI dùng cùng canonical decision.
 
 ## 日本語
 
-`src/ragops/` がポータブル評価、決定的比較、統計ゲートを担当します。`scenarios/` と `schemas/` はバージョン管理された契約です。`apps/` は任意の API・GitHub アダプターです。再利用可能 workflow は同じコアを読み取り専用で呼び出し、上限付き証拠を出力します。
+`src/ragops/` は portable contract、決定的 evaluator、policy、calibration、evidence bundle、adapter、SQLite governance を担当します。API/UI は任意の packaged adapter で、core import は FastAPI、Uvicorn、vendor SDK を読み込みません。CLI/API/UI/CI は同じ canonical decision を使用します。

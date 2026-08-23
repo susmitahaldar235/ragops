@@ -1,0 +1,18 @@
+{
+  "schema_version": "0.1",
+  "provider": "custom",
+  "records": [
+    {
+      "case_id": "support-001",
+      "metrics": {
+        "phoenix.answer_quality": 87.5
+      }
+    },
+    {
+      "case_id": "support-002",
+      "metrics": {
+        "phoenix.answer_quality": 42.0
+      }
+    }
+  ]
+}

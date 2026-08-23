@@ -5,9 +5,21 @@ import os
 from pathlib import Path
 from uuid import uuid4
 
+from ragops.ci import github_summary, junit_xml, sarif_report
 from ragops.engine import compare
+from ragops.evidence import create_evidence_bundle
+from ragops.explain import explain_decision
 from ragops.loader import responses_from_data, scenario_from_dict
-from ragops.reporters import comparison_html, comparison_markdown
+from ragops.models import ComparisonReport, RegressionPolicy
+from ragops.policy_v2 import GateEvidence, ReleaseDecision
+from ragops.reporters import comparison_html, comparison_markdown, demo_profile_markdown
+
+DEMO_CREATED_AT = "2026-08-23T00:00:00Z"
+DEMO_LIMITATIONS = (
+    "Synthetic benchmark evidence; this is not production adoption evidence.",
+    "Deterministic lexical evaluators do not replace domain-expert or production monitoring review.",
+)
+DEMO_PROFILES = ("executive", "engineer", "auditor")
 
 DEMO_SCENARIO = {
     "schema_version": "0.2",
@@ -238,9 +250,12 @@ def write_demo(
     *,
     force: bool = False,
     scenario_id: str = DEFAULT_DEMO_SCENARIO,
+    profile: str = "engineer",
 ) -> dict[str, object]:
     """Write a credential-free demo bundle and return its release summary."""
 
+    if profile not in DEMO_PROFILES:
+        raise ValueError(f"unknown demo profile {profile!r}; choose one of: {', '.join(DEMO_PROFILES)}")
     try:
         scenario_data, baseline_data, candidate_data = DEMO_BUNDLES[scenario_id]
     except KeyError as exc:
@@ -259,6 +274,9 @@ def write_demo(
             raise NotADirectoryError(f"demo output is not a directory: {destination}")
     else:
         destination.mkdir(parents=True, exist_ok=False)
+    evidence_path = destination / "evidence"
+    if force and (evidence_path.exists() or evidence_path.is_symlink()):
+        _remove_demo_evidence(evidence_path)
     scenario = scenario_from_dict(scenario_data)
     report = compare(
         scenario,
@@ -271,7 +289,15 @@ def write_demo(
         "candidate": destination / "candidate.json",
         "markdown_report": destination / "release-report.md",
         "html_report": destination / "release-report.html",
+        "comparison": destination / "comparison.json",
+        "decision": destination / "decision.json",
+        "explanation": destination / "explanation.json",
+        "junit": destination / "junit.xml",
+        "sarif": destination / "release.sarif",
+        "github_summary": destination / "github-summary.md",
+        "profile_summary": destination / "profile-summary.md",
     }
+    decision = _release_decision(report)
     _write_demo_file(
         files["scenario"],
         json.dumps(scenario_data, ensure_ascii=False, indent=2) + "\n",
@@ -289,14 +315,146 @@ def write_demo(
     )
     _write_demo_file(files["markdown_report"], comparison_markdown(report), force=force)
     _write_demo_file(files["html_report"], comparison_html(report), force=force)
+    _write_demo_file(
+        files["comparison"],
+        json.dumps(report.to_dict(), ensure_ascii=False, indent=2) + "\n",
+        force=force,
+    )
+    _write_demo_file(
+        files["decision"],
+        json.dumps(decision.to_dict(), ensure_ascii=False, indent=2) + "\n",
+        force=force,
+    )
+    _write_demo_file(
+        files["explanation"],
+        json.dumps(explain_decision(decision).to_dict(), ensure_ascii=False, indent=2) + "\n",
+        force=force,
+    )
+    _write_demo_file(files["junit"], junit_xml(decision), force=force)
+    _write_demo_file(
+        files["sarif"],
+        json.dumps(sarif_report(decision), ensure_ascii=False, indent=2) + "\n",
+        force=force,
+    )
+    _write_demo_file(files["github_summary"], github_summary(decision), force=force)
+    manifest = create_evidence_bundle(
+        evidence_path,
+        {
+            "baseline": files["baseline"],
+            "candidate": files["candidate"],
+            "comparison": files["comparison"],
+            "decision": files["decision"],
+            "explanation": files["explanation"],
+            "github_summary": files["github_summary"],
+            "html": files["html_report"],
+            "junit": files["junit"],
+            "markdown": files["markdown_report"],
+            "sarif": files["sarif"],
+            "scenario": files["scenario"],
+        },
+        decision.decision,
+        DEMO_LIMITATIONS,
+        DEMO_CREATED_AT,
+        {
+            "evidence_classification": "synthetic",
+            "profile": profile,
+            "scenario_id": scenario_id,
+        },
+    )
+    _write_demo_file(
+        files["profile_summary"],
+        demo_profile_markdown(profile, report, manifest.to_dict()),
+        force=force,
+    )
     return {
         "demo_completed": True,
         "scenario_id": scenario_id,
         "candidate_decision": "BLOCK" if not report.passed else "PASS",
+        "evidence_classification": "synthetic",
+        "profile": profile,
         "failed_gates": list(report.failed_gates),
         "output_dir": str(destination),
-        "files": {name: str(path) for name, path in files.items()},
+        "files": {**{name: str(path) for name, path in files.items()}, "evidence": str(evidence_path)},
     }
+
+
+def _release_decision(report: ComparisonReport) -> ReleaseDecision:
+    policy = RegressionPolicy()
+    definitions = {
+        "candidate_release_gate": (
+            "candidate_release_gate", 1.0 if report.candidate_passed else 0.0, 1.0, ">=",
+            "candidate.release_gate",
+        ),
+        "citation_coverage_regression": (
+            "citation_coverage", report.deltas["citation_coverage"],
+            -policy.max_citation_coverage_drop, ">=", "regression.max_citation_coverage_drop",
+        ),
+        "citation_precision_regression": (
+            "citation_precision", report.deltas["citation_precision"],
+            -policy.max_citation_precision_drop, ">=", "regression.max_citation_precision_drop",
+        ),
+        "groundedness_regression": (
+            "lexical_groundedness", report.deltas["lexical_groundedness"],
+            -policy.max_groundedness_drop, ">=", "regression.max_groundedness_drop",
+        ),
+        "latency_regression": (
+            "avg_latency_ms", report.deltas["avg_latency_ms"],
+            policy.max_latency_increase_ms, "<=", "regression.max_latency_increase_ms",
+        ),
+        "cost_regression": (
+            "avg_cost_usd", report.deltas["avg_cost_usd"],
+            policy.max_cost_increase_usd, "<=", "regression.max_cost_increase_usd",
+        ),
+        "new_critical_findings": (
+            "critical_findings", report.deltas["critical_findings"], 0.0, "<=",
+            "regression.new_critical_findings",
+        ),
+    }
+    affected = _affected_case_ids(report)
+    gates = tuple(
+        GateEvidence(
+            id=gate_id,
+            metric=definitions[gate_id][0],
+            scope="global",
+            observed=float(definitions[gate_id][1]),
+            threshold=float(definitions[gate_id][2]),
+            comparator=definitions[gate_id][3],
+            passed=False,
+            severity="block",
+            policy_path=definitions[gate_id][4],
+            case_ids=affected,
+        )
+        for gate_id in report.failed_gates
+    )
+    release = "PASS" if report.passed else "BLOCK"
+    return ReleaseDecision("1.0", report.scenario_id, release, report.passed, gates)
+
+
+def _affected_case_ids(report: ComparisonReport) -> tuple[str, ...]:
+    affected = []
+    for baseline, candidate in zip(report.baseline.cases, report.candidate.cases, strict=True):
+        if (
+            candidate.citation_coverage < baseline.citation_coverage
+            or candidate.citation_precision < baseline.citation_precision
+            or candidate.lexical_groundedness < baseline.lexical_groundedness
+            or len(candidate.findings) > len(baseline.findings)
+        ):
+            affected.append(candidate.case_id)
+    return tuple(affected)
+
+
+def _remove_demo_evidence(path: Path) -> None:
+    if path.is_symlink() or not path.is_dir():
+        raise FileExistsError(f"refusing non-directory demo evidence target: {path}")
+    entries = sorted(path.rglob("*"), key=lambda item: len(item.parts), reverse=True)
+    if any(item.is_symlink() for item in entries):
+        raise FileExistsError(f"refusing symlink inside demo evidence: {path}")
+    for item in entries:
+        if item.is_file():
+            item.unlink()
+        elif item.is_dir():
+            item.rmdir()
+    path.rmdir()
 
 
 def _write_demo_file(path: Path, content: str, *, force: bool) -> None:

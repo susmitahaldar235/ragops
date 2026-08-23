@@ -1,3 +1,8 @@
+---
+name: ragops-release
+description: Assess RAGOps release readiness, run its quality gates, and produce owner acceptance evidence without publishing or tagging a release.
+---
+
 # RAGOps release-readiness workflow
 
 Use to prepare owner acceptance. It does not authorize publication.

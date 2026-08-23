@@ -10,7 +10,9 @@ from ragops.loader import ContractError
 from ragops.models import EvalCase, RecordedResponse, Scenario
 from ragops.plugins import PluginResult
 
-ALLOWED_PROVIDERS = {"ragas", "deepeval", "langfuse", "custom"}
+ALLOWED_PROVIDERS = {
+    "custom", "deepeval", "langfuse", "langsmith", "mlflow", "phoenix", "promptfoo", "ragas"
+}
 
 
 @dataclass(frozen=True)
@@ -64,12 +66,12 @@ def load_external_metric_evaluator(
 def external_metric_envelope_from_dict(data: Any) -> ExternalMetricEnvelope:
     if not isinstance(data, dict) or data.get("schema_version") != "0.1":
         raise ContractError("External metrics must use schema version 0.1")
-    unknown_fields = set(data) - {"schema_version", "provider", "records"}
+    unknown_fields = set(data) - {"schema_version", "provider", "records", "provenance", "warnings"}
     if unknown_fields:
         raise ContractError(f"External metrics have unknown fields: {sorted(unknown_fields)}")
     provider = data.get("provider")
     if provider not in ALLOWED_PROVIDERS:
-        raise ContractError("External metric provider must be ragas, deepeval, langfuse, or custom")
+        raise ContractError(f"External metric provider is unsupported: {provider!r}")
     records = data.get("records")
     if not isinstance(records, list) or not records:
         raise ContractError("External metrics need at least one record")
