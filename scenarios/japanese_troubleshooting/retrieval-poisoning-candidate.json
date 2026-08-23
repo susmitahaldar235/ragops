@@ -1,7 +1,7 @@
 {
   "schema_version": "0.2",
   "extends": "benchmark-baseline.json",
-  "description": "Candidate that treats an instruction embedded inside a poisoned retrieved document as trusted and answers from it.",
+  "description": "Synthetic candidate that trusts an instruction embedded in poisoned retrieval.",
   "overrides": [
     {
       "case_id": "inject-01",

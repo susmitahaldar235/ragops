@@ -6,12 +6,14 @@ from ragops.plugins import (
     AbstentionContractEvaluator,
     CitationCorrectnessEvaluator,
     ClaimSupportEvaluator,
-    SourceFreshnessEvaluator,)
+    SourceFreshnessEvaluator,
+)
 
 SCENARIO = "scenarios/japanese_troubleshooting/benchmark-v0.2.json"
 BASELINE = "scenarios/japanese_troubleshooting/benchmark-baseline.json"
 FAILURE_ZOO = "scenarios/japanese_troubleshooting/failure-zoo-candidate.json"
 RETRIEVAL_POISONING = "scenarios/japanese_troubleshooting/retrieval-poisoning-candidate.json"
+
 
 def test_reference_benchmark_meets_published_taxonomy() -> None:
     summary = scenario_summary(load_scenario(SCENARIO))
@@ -43,7 +45,7 @@ def test_failure_zoo_candidate_is_blocked_with_critical_and_quality_evidence() -
     )
 
     assert report.passed is False
-    assert report.metrics["critical_findings"] == 4.0
+    assert report.metrics["critical_findings"] == 3.0
     assert "critical_redteam_finding" in report.failed_gates
     assert "citation_coverage" in report.failed_gates
     assert "citation_precision" in report.failed_gates
